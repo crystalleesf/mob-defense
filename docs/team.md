@@ -3,14 +3,14 @@ layout: default
 title:  Team
 ---
 
-# {{ page.title }}
+# Team
 
 
-## USER 1
-***UCI Net ID***: ucinetid1
+## Joshua Chan
+***UCI Net ID***: joshulc1
 
-## USER 2
-***UCI Net ID***: ucinetid2
+## Crystal Lee
+***UCI Net ID***: crystml3
 
-## USER 3
-***UCI Net ID***: ucinetid3
+## Linus Ng
+***UCI Net ID***: nglc
