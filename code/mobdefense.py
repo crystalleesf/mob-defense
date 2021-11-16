@@ -129,7 +129,7 @@ class MobDefense(gym.Env):
                 <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
                     <About>
-                        <Summary>Diamond Collector</Summary>
+                        <Summary>Mob Defense</Summary>
                     </About>
 
                     <ServerSection>
