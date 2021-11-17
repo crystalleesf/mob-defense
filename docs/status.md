@@ -32,4 +32,4 @@ Firstly, we need to figure out how to add a negative reward for when the agent i
 - `hit_test.py` from Malmo's Python Examples
 
 ## Video Summary
-[Link to video summary](https://www.youtube.com/)
+[Link to video summary](https://youtu.be/QkuBMTqwSaE)
