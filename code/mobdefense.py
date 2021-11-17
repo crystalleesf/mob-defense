@@ -61,7 +61,6 @@ class MobDefense(gym.Env):
     def reset(self):
         """
         Resets the environment for the next episode.
-
         Returns
             observation: <np.array> flattened initial obseravtion
         """
@@ -127,11 +126,9 @@ class MobDefense(gym.Env):
 
         return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-
                     <About>
                         <Summary>Mob Defense</Summary>
                     </About>
-
                     <ServerSection>
                         <ServerInitialConditions>
                             <Time>
@@ -155,7 +152,6 @@ class MobDefense(gym.Env):
                             <ServerQuitFromTimeUp timeLimitMs="120000"/>
                         </ServerHandlers>
                     </ServerSection>
-
                     <AgentSection mode="Survival">
                         <Name>CS175MobDefense</Name>
                         <AgentStart>
@@ -226,7 +222,7 @@ class MobDefense(gym.Env):
         self_x = 0
         self_z = 0
         current_yaw = 0
-
+        curr_health = 0
         self.agent_host.sendCommand("chat /enchant CS175MobDefense minecraft:sharpness 5")
         
         while world_state.is_mission_running:
@@ -284,7 +280,12 @@ class MobDefense(gym.Env):
                             print("Zombie", end=' ')
                             r = old_div(40.0, tot)
                             print("Z:", num_Zombie)
-                            
+
+                if u'Life' in ob:
+                    if curr_health > ob["Life"]:
+                        total_reward -= 1
+                    curr_health = ob["Life"]
+                    print(curr_health)                            
             if world_state.number_of_rewards_since_last_state > 0:
                 # Keep track of our total reward:
                 total_reward += world_state.rewards[-1].getValue()
@@ -314,10 +315,8 @@ class MobDefense(gym.Env):
         """
         Use the agent observation API to get a flattened 2 x 5 x 5 grid around the agent. 
         The agent is in the center square facing up.
-
         Args
             world_state: <object> current agent world state
-
         Returns
             observation: <np.array> the state observation
             allow_break_action: <bool> whether the agent is facing a diamond
@@ -362,7 +361,6 @@ class MobDefense(gym.Env):
     def log_returns(self, episode_num, total_reward):
         """
         Log the current returns as a graph and text file
-
         Args:
             steps (list): list of global steps after each episode
             returns (list): list of total return of each episode
