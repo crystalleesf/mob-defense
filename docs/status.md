@@ -24,7 +24,7 @@ We evaluated our agent quantitively by plotting the total reward after each epis
 
 ## Remaining Goals and Challenges
 
-Firstly, we need to figure out how to add a negative reward for when the agent incurs damage. Secondly, we plan to add a friendly mob that the agent SHOULD NOT attack. Lastly, we need to respawn zombies after they are killed, so that the agent's reward is not upper bounded by the number of zombies in the arena. 
+Firstly, we need to figure out how to add a negative reward for when the agent incurs damage. Secondly, we plan to add a friendly mob that the agent SHOULD NOT attack. In addition, we need to alter the turning speed of the agent. The agent struggles with looking towards the zombies when they attack it, making it difficult for him to attack/damage them. Lastly, we need to respawn zombies after they are killed, so that the agent's reward is not upper bounded by the number of zombies in the arena. 
 
 ## Resources Used
 - [Malmo XML Schema Documentation](https://microsoft.github.io/malmo/0.21.0/Schemas/MissionHandlers.html)
