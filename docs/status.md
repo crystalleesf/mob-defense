@@ -15,8 +15,12 @@ The agent exists in a continuous observation space and its available actions are
 
 ## Evaluation
 ### Qualitative
+When evaluating our agent qualitatively, we observed the agent's movement to see if it was moving towards the "zombiest" section of the arena and turning its body properly to attack the zombies. Overtime, our agent improved in moving towards the area with more zombies and to the zombies with lower health. We also noticed that in the early learning stages that the agent fails to turn its body quick enough to attack the zombies. This skill still needs to be improved and tweaked, as changing its "line of vision" faster will help it spot zombies sooner.
 
 ### Quantitative
+We evaluated our agent quantitively by plotting the total reward after each episode. Each episode is 120,000 ms long or concludes when the agent is killed. Looking at our graph, there are signs of improvement and learning happening, but the trend is not continuous. We believe that this is happening because as of now, the agent is only receiving positive rewards. Once we have negative rewards implemented for incurring damage to health or killing friendly mobs, we believe that the trend should have an upward trend for total reward.
+
+<img src="./images/status-results.png" alt="Total reward v. Episode Graph" width="500"/>
 
 ## Remaining Goals and Challenges
 
@@ -26,3 +30,6 @@ Firstly, we need to figure out how to add a negative reward for when the agent i
 - [Malmo XML Schema Documentation](https://microsoft.github.io/malmo/0.21.0/Schemas/MissionHandlers.html)
 - [Minecraft Enchantment Command](https://www.digminecraft.com/game_commands/enchant_command.php)
 - `hit_test.py` from Malmo's Python Examples
+
+## Video Summary
+[Link to video summary](https://www.youtube.com/)
