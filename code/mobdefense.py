@@ -314,7 +314,8 @@ class MobDefense(gym.Env):
 
         # Reward if agent has killed zombies
         if num_Zombie != Zombie_population:
-            total_reward += (Zombie_population - num_Zombie) * 5
+            pass
+            # total_reward += (Zombie_population - num_Zombie) * 5
         # mission has ended.
         for error in world_state.errors:
             print("Error:",error.text)
