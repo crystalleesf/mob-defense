@@ -1,10 +1,6 @@
 # Rllib docs: https://docs.ray.io/en/latest/rllib.html
 # Malmo XML docs: https://docs.ray.io/en/latest/rllib.html
 
-########### TO DO ###########
-# reward for agent health   #
-#############################
-
 try:
     from malmo import MalmoPython
 except:
@@ -23,8 +19,8 @@ import random
 import math
 import matplotlib.pyplot as plt
 # Task parameters:
-ARENA_WIDTH = 100
-ARENA_BREADTH = 100
+ARENA_WIDTH = 20
+ARENA_BREADTH = 20
 
 class MobDefense(gym.Env):
 
@@ -110,9 +106,6 @@ class MobDefense(gym.Env):
         glowstone_wall += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(-11, -11)
         glowstone_wall += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(-11, 11)
         glowstone_wall += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(11, -11)
-        # glowstone_wall += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(-10, 5)
-        # glowstone_wall += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(-10, -5)
-        # glowstone_wall += "<DrawBlock x='{}' y='1' z='{}' type='glowstone' />".format(0, 0)
             
         for z in range(-10,11):
             arena_walls += "<DrawBlock x='{}' y='2' z='{}' type='glowstone' />".format(-10, z)
@@ -124,8 +117,11 @@ class MobDefense(gym.Env):
         
         # Draw Zombie
         hostile_mob_xml = ""
-        for zombro in range(0,4):
-            hostile_mob_xml += "<DrawEntity x='{}' y='2' z='{}' type='Zombie' />".format(random.randint(-9,9), random.randint(-9,9))
+        hostile_mob_xml += "<DrawEntity x='{}' y='2' z='{}' type='Zombie' />".format(random.randint(-9,9), random.randint(-9,9))
+        hostile_mob_xml += "<DrawEntity x='{}' y='2' z='{}' type='Zombie' />".format(random.randint(-9,9), random.randint(-9,9))
+        hostile_mob_xml += "<DrawEntity x='{}' y='2' z='{}' type='Zombie' />".format(random.randint(-9,9), random.randint(-9,9))
+        hostile_mob_xml += "<DrawEntity x='{}' y='2' z='{}' type='Zombie' />".format(random.randint(-9,9), random.randint(-9,9))
+
         # hostile_mob_xml += "<DrawLine x1='-8' y1='2' z1='8' x2='-8' y2='2' z2='8' type='mob_spawner' variant='Zombie' />"
         # hostile_mob_xml += "<DrawLine x1='-8' y1='2' z1='-8' x2='-8' y2='2' z2='-8' type='mob_spawner' variant='Zombie' />"
         # hostile_mob_xml += "<DrawLine x1='8' y1='2' z1='-8' x2='8' y2='2' z2='-8' type='mob_spawner' variant='Zombie' />"
@@ -148,8 +144,6 @@ class MobDefense(gym.Env):
                                 <AllowPassageOfTime>false</AllowPassageOfTime>
                             </Time>
                             <Weather>clear</Weather>
-                            <AllowSpawning>true</AllowSpawning>
-                            <AllowedMobs>Zombie Sheep</AllowedMobs>
                         </ServerInitialConditions>
                         <ServerHandlers>
                             <FlatWorldGenerator generatorString="3;7,2;1;"/>
@@ -234,7 +228,7 @@ class MobDefense(gym.Env):
 
         # main loop:
         total_reward = 0
-        Zombie_population = 4
+        zombie_population = 4
         self_x = 0
         self_z = 0
         current_yaw = 0
@@ -266,13 +260,13 @@ class MobDefense(gym.Env):
                 # of population sizes - allows us some measure of "progress".
                 if u'entities' in ob:
                     entities = ob["entities"]
-                    num_Zombie = 0
+                    num_zombie = 0
                     num_sheep = 0
                     x_pull = 0
                     z_pull = 0
                     for e in entities:
                         if e["name"] == "Zombie":
-                            num_Zombie += 1
+                            num_zombie += 1
                             # Each Zombie contributes to the direction we should head in...
                             dist = max(0.0001, (e["x"] - self_x) * (e["x"] - self_x) + (e["z"] - self_z) * (e["z"] - self_z))
                             # Prioritise going after wounded Zombie. Max Zombie health is 20, according to Minecraft wiki...
@@ -292,14 +286,12 @@ class MobDefense(gym.Env):
                     self.agent_host.sendCommand("turn " + str(difference*10))
                     move_speed = 1.0 if abs(difference) < 0.5 else 0  # move slower when turning faster - helps with "orbiting" problem
                     self.agent_host.sendCommand("move " + str(move_speed))
-                    if num_Zombie != Zombie_population:
+                    if num_zombie != zombie_population:
                         # Print an update of our "progress":
-                        # Zombie_population = num_Zombie
-                        tot = Zombie_population
+                        tot = zombie_population
                         if tot:
                             print("Zombie:Sheep", end=' ')
-                            # r = old_div(40.0, tot)
-                            print("Z:", num_Zombie)
+                            print("Z:", num_zombie)
                             print("S:", num_sheep)
                             
 
@@ -307,15 +299,13 @@ class MobDefense(gym.Env):
                     if curr_health > ob["Life"]:
                         total_reward -= 1
                     curr_health = ob["Life"]
-                    # print(curr_health)                            
             if world_state.number_of_rewards_since_last_state > 0:
                 # Keep track of our total reward:
                 total_reward += world_state.rewards[-1].getValue()
 
         # Reward if agent has killed zombies
-        if num_Zombie != Zombie_population:
-            pass
-            # total_reward += (Zombie_population - num_Zombie) * 5
+        if num_zombie != zombie_population:
+            total_reward += (zombie_population - num_zombie) * 5
         # mission has ended.
         for error in world_state.errors:
             print("Error:",error.text)
