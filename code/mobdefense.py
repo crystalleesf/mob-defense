@@ -1,10 +1,6 @@
 # Rllib docs: https://docs.ray.io/en/latest/rllib.html
 # Malmo XML docs: https://docs.ray.io/en/latest/rllib.html
 
-########### TO DO ###########
-# reward for agent health   #
-#############################
-
 try:
     from malmo import MalmoPython
 except:
@@ -23,8 +19,8 @@ import random
 import math
 import matplotlib.pyplot as plt
 # Task parameters:
-ARENA_WIDTH = 100
-ARENA_BREADTH = 100
+ARENA_WIDTH = 20
+ARENA_BREADTH = 20
 
 class MobDefense(gym.Env):
 
@@ -32,10 +28,11 @@ class MobDefense(gym.Env):
         # Static Parameters
         self.size = 50
         self.obs_size = 5
-        self.max_episode_steps = 100
+        self.max_episode_steps = 10000
         self.log_frequency = 1
       
         self.episode_num = 0
+        self.total_reward = 0
         self.total_reward_arr = []
 
         # Rllib Parameters
@@ -54,6 +51,7 @@ class MobDefense(gym.Env):
         # MobDefense Parameters
         self.obs = None
         self.allow_break_action = False
+        self.episode_step = 0
         self.episode_return = 0
         self.returns = []
         self.steps = []
@@ -61,16 +59,26 @@ class MobDefense(gym.Env):
     def reset(self):
         """
         Resets the environment for the next episode.
-
         Returns
             observation: <np.array> flattened initial obseravtion
         """
+        self.episode_num += 1
+        self.total_reward_arr.append(self.total_reward)
+        # print("Reward Array: ", self.total_reward_arr)
+        print("Episode number: ", self.episode_num)
+        print("Total score this round:", self.total_reward)
+        print("=" * 41)
+
         # Reset Malmo
         world_state = self.init_malmo()
-
+        
         # Reset Variables
         self.returns.append(self.episode_return)
+        current_step = self.steps[-1] if len(self.steps) > 0 else 0
+        self.steps.append(current_step + self.episode_step)
         self.episode_return = 0
+        self.episode_step = 0
+        self.total_reward = 0
 
         # Get Observation
         self.obs, self.allow_break_action = self.get_observation(world_state)
@@ -83,6 +91,22 @@ class MobDefense(gym.Env):
         for error in world_state.errors:
             print("Error:", error.text)
         self.obs, self.allow_break_action = self.get_observation(world_state) 
+
+        if world_state.number_of_observations_since_last_state > 0:
+            msg = world_state.observations[-1].text
+            ob = json.loads(msg)
+            # Use the line-of-sight observation to determine when to hit and when not to hit:
+            if u'LineOfSight' in ob:
+                los = ob[u'LineOfSight']
+                type=los["type"]
+                if type == "Zombie":
+                    self.agent_host.sendCommand('move 0')
+                    self.agent_host.sendCommand('turn 0')
+                    self.agent_host.sendCommand("attack 1")
+                    time.sleep(.5)
+                    self.agent_host.sendCommand("attack 0")
+            self.agent_host.sendCommand("turn " + str(action[1]*10))
+            self.agent_host.sendCommand("move " + str(action[0]))
 
         # Get Done
         done = not world_state.is_mission_running 
@@ -99,39 +123,44 @@ class MobDefense(gym.Env):
         # Draw Arena
         arena_walls = ""
         for x in range(-10,11):
-            arena_walls += "<DrawBlock x='{}' y='2' z='{}' type='grass' />".format(x, 10)
-            arena_walls += "<DrawBlock x='{}' y='3' z='{}' type='grass' />".format(x, 10)
-            arena_walls += "<DrawBlock x='{}' y='4' z='{}' type='grass' />".format(x, 10)
-            arena_walls += "<DrawBlock x='{}' y='2' z='{}' type='grass' />".format(x, -10)
-            arena_walls += "<DrawBlock x='{}' y='3' z='{}' type='grass' />".format(x, -10)
-            arena_walls += "<DrawBlock x='{}' y='4' z='{}' type='grass' />".format(x, -10)
+            arena_walls += "<DrawBlock x='{}' y='2' z='{}' type='glowstone' />".format(x, 10)
+            arena_walls += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(x, 10)
+            arena_walls += "<DrawBlock x='{}' y='4' z='{}' type='glowstone' />".format(x, 10)
+            arena_walls += "<DrawBlock x='{}' y='2' z='{}' type='glowstone' />".format(x, -10)
+            arena_walls += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(x, -10)
+            arena_walls += "<DrawBlock x='{}' y='4' z='{}' type='glowstone' />".format(x, -10)
         
         glowstone_wall = ""
-        glowstone_wall += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(0, 10)
-        glowstone_wall += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(0, -10)
-        glowstone_wall += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(-10, 5)
-        glowstone_wall += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(10, 5)
+        glowstone_wall += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(11, 11)
+        glowstone_wall += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(-11, -11)
+        glowstone_wall += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(-11, 11)
+        glowstone_wall += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(11, -11)
             
         for z in range(-10,11):
-            arena_walls += "<DrawBlock x='{}' y='2' z='{}' type='grass' />".format(-10, z)
-            arena_walls += "<DrawBlock x='{}' y='3' z='{}' type='grass' />".format(-10, z)
-            arena_walls += "<DrawBlock x='{}' y='4' z='{}' type='grass' />".format(-10, z)   
-            arena_walls += "<DrawBlock x='{}' y='2' z='{}' type='grass' />".format(10, z) 
-            arena_walls += "<DrawBlock x='{}' y='3' z='{}' type='grass' />".format(10, z)
-            arena_walls += "<DrawBlock x='{}' y='4' z='{}' type='grass' />".format(10, z)
+            arena_walls += "<DrawBlock x='{}' y='2' z='{}' type='glowstone' />".format(-10, z)
+            arena_walls += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(-10, z)
+            arena_walls += "<DrawBlock x='{}' y='4' z='{}' type='glowstone' />".format(-10, z)   
+            arena_walls += "<DrawBlock x='{}' y='2' z='{}' type='glowstone' />".format(10, z) 
+            arena_walls += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(10, z)
+            arena_walls += "<DrawBlock x='{}' y='4' z='{}' type='glowstone' />".format(10, z)
         
         # Draw Zombie
-        hostile_mob_xml = "<DrawEntity x='{}' y='2' z='{}' type='Zombie' />".format(0, 5) 
-        hostile_mob_xml += "<DrawEntity x='{}' y='2' z='{}' type='Zombie' />".format(-5, 2) 
-        hostile_mob_xml += "<DrawEntity x='{}' y='2' z='{}' type='Zombie' />".format(3, 8) 
+        hostile_mob_xml = ""
+        hostile_mob_xml += "<DrawEntity x='{}' y='2' z='{}' type='Zombie' />".format(random.randint(-9,9), random.randint(-9,9))
+        hostile_mob_xml += "<DrawEntity x='{}' y='2' z='{}' type='Zombie' />".format(random.randint(-9,9), random.randint(-9,9))
+        hostile_mob_xml += "<DrawEntity x='{}' y='2' z='{}' type='Zombie' />".format(random.randint(-9,9), random.randint(-9,9))
+        hostile_mob_xml += "<DrawEntity x='{}' y='2' z='{}' type='Zombie' />".format(random.randint(-9,9), random.randint(-9,9))
 
+        #Draw Sheep
+        friendly_mob_xml = ""
+        for sheep in range(0,50):
+            friendly_mob_xml += "<DrawEntity x='{}' y='2' z='{}' type='Sheep' />".format(random.randint(-8,8), random.randint(-8,8)) 
+       
         return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-
                     <About>
                         <Summary>Mob Defense</Summary>
                     </About>
-
                     <ServerSection>
                         <ServerInitialConditions>
                             <Time>
@@ -148,14 +177,14 @@ class MobDefense(gym.Env):
                                 arena_walls + \
                                 glowstone_wall + \
                                 hostile_mob_xml + \
+                                friendly_mob_xml + \
                                 '''<DrawBlock x='0'  y='2' z='0' type='air' />
                                 <DrawBlock x='0'  y='1' z='0' type='stone' />
                             </DrawingDecorator>
                             <ServerQuitWhenAnyAgentFinishes/>
-                            <ServerQuitFromTimeUp timeLimitMs="120000"/>
+                            <ServerQuitFromTimeUp timeLimitMs="60000"/>
                         </ServerHandlers>
                     </ServerSection>
-
                     <AgentSection mode="Survival">
                         <Name>CS175MobDefense</Name>
                         <AgentStart>
@@ -171,6 +200,7 @@ class MobDefense(gym.Env):
                             <ObservationFromRay/>
                             <RewardForDamagingEntity>
                                 <Mob type="Zombie" reward="1"/>
+                                <Mob type="Sheep" reward= "-1"/>
                             </RewardForDamagingEntity>
                             <ObservationFromNearbyEntities>
                                 <Range name="entities" xrange="'''+str(ARENA_WIDTH)+'''" yrange="2" zrange="'''+str(ARENA_BREADTH)+'''" />
@@ -181,6 +211,7 @@ class MobDefense(gym.Env):
                                     <max x="'''+str(int(self.obs_size/2))+'''" y="0" z="'''+str(int(self.obs_size/2))+'''"/>
                                 </Grid>
                             </ObservationFromGrid>
+                            <AgentQuitFromReachingCommandQuota total="'''+str(self.max_episode_steps * 3)+'''" />
                             <AgentQuitFromTouchingBlockType>
                                 <Block type="bedrock" />
                             </AgentQuitFromTouchingBlockType>
@@ -217,107 +248,19 @@ class MobDefense(gym.Env):
         while not world_state.has_mission_begun:
             time.sleep(0.1)
             world_state = self.agent_host.getWorldState()
-            # for error in world_state.errors:
-            #     print("\nError:", error.text)
+            for error in world_state.errors:
+                print("\nError:", error.text)
 
-        # main loop:
-        total_reward = 0
-        Zombie_population = 0
-        self_x = 0
-        self_z = 0
-        current_yaw = 0
-
-        self.agent_host.sendCommand("chat /enchant CS175MobDefense minecraft:sharpness 5")
-        
-        while world_state.is_mission_running:
-            world_state = self.agent_host.getWorldState()
-            if world_state.number_of_observations_since_last_state > 0:
-                msg = world_state.observations[-1].text
-                ob = json.loads(msg)
-                # Use the line-of-sight observation to determine when to hit and when not to hit:
-                if u'LineOfSight' in ob:
-                    los = ob[u'LineOfSight']
-                    type=los["type"]
-                    if type == "Zombie":
-                        self.agent_host.sendCommand("attack 1")
-                        time.sleep(.5)
-                        self.agent_host.sendCommand("attack 0")
-                # Get our position/orientation:
-                if u'Yaw' in ob:
-                    current_yaw = ob[u'Yaw']
-                if u'XPos' in ob:
-                    self_x = ob[u'XPos']
-                if u'ZPos' in ob:
-                    self_z = ob[u'ZPos']
-                # Use the nearby-entities observation to decide which way to move, and to keep track
-                # of population sizes - allows us some measure of "progress".
-                if u'entities' in ob:
-                    entities = ob["entities"]
-                    num_Zombie = 0
-                    x_pull = 0
-                    z_pull = 0
-                    for e in entities:
-                        if e["name"] == "Zombie":
-                            num_Zombie += 1
-                            # Each Zombie contributes to the direction we should head in...
-                            dist = max(0.0001, (e["x"] - self_x) * (e["x"] - self_x) + (e["z"] - self_z) * (e["z"] - self_z))
-                            # Prioritise going after wounded Zombie. Max Zombie health is 20, according to Minecraft wiki...
-                            weight = 21.0 - e["life"]
-                            x_pull += weight * (e["x"] - self_x) / dist
-                            z_pull += weight * (e["z"] - self_z) / dist
-                    # Determine the direction we need to turn in order to head towards the "Zombieiest" point:
-                    yaw = -180 * math.atan2(x_pull, z_pull) / math.pi
-                    difference = yaw - current_yaw
-                    while difference < -180:
-                        difference += 360
-                    while difference > 180:
-                        difference -= 360
-                    difference /= 180.0
-                    self.agent_host.sendCommand("turn " + str(difference))
-                    move_speed = 1.0 if abs(difference) < 0.5 else 0  # move slower when turning faster - helps with "orbiting" problem
-                    self.agent_host.sendCommand("move " + str(move_speed))
-                    if num_Zombie != Zombie_population:
-                        # Print an update of our "progress":
-                        Zombie_population = num_Zombie
-                        tot = Zombie_population
-                        if tot:
-                            print("Zombie", end=' ')
-                            r = old_div(40.0, tot)
-                            print("Z:", num_Zombie)
-                            
-            if world_state.number_of_rewards_since_last_state > 0:
-                # Keep track of our total reward:
-                total_reward += world_state.rewards[-1].getValue()
-
-        # mission has ended.
-        for error in world_state.errors:
-            print("Error:",error.text)
-        if world_state.number_of_rewards_since_last_state > 0:
-            # A reward signal has come in - see what it is:
-            total_reward += world_state.rewards[-1].getValue()
-
-        print()
-        print("=" * 41)
-        self.episode_num += 1
-        self.total_reward_arr.append(total_reward)
-        print("Reward Array: ", self.total_reward_arr)
-        print("Episode number: ", self.episode_num)
-        print("Total score this round:", total_reward)
-        print("=" * 41)
-        print()
-        self.log_returns(self.episode_num, total_reward)
-        time.sleep(1) # Give the mod a little time to prepare for the next mission.
-
+        self.agent_host.sendCommand("chat /enchant CS175MobDefense minecraft:sharpness 2")
+        self.agent_host.sendCommand("chat /effect CS175MobDefense minecraft:night_vision 100000 2")
         return world_state
 
     def get_observation(self, world_state):
         """
         Use the agent observation API to get a flattened 2 x 5 x 5 grid around the agent. 
         The agent is in the center square facing up.
-
         Args
             world_state: <object> current agent world state
-
         Returns
             observation: <np.array> the state observation
             allow_break_action: <bool> whether the agent is facing a diamond
@@ -337,7 +280,7 @@ class MobDefense(gym.Env):
                 observations = json.loads(msg)
 
                 # Get observation
-                print(observations.keys())
+                # print(observations.keys())
                 grid = observations['floorAll']
                 for i, x in enumerate(grid):
                     obs[i] = x == 'Zombie'
@@ -354,15 +297,32 @@ class MobDefense(gym.Env):
                 obs = obs.flatten()
 
                 allow_break_action = observations['LineOfSight']['type'] == 'Zombie'
-                print(allow_break_action)
+                # print(allow_break_action)
                 break
+        
+        ##### End of episode #####
+        # Check number of zombies remaining and reward if the agent has killed a zombie
+        if world_state.number_of_observations_since_last_state > 0:
+            msg = world_state.observations[-1].text
+            ob = json.loads(msg)
+            if u'entities' in ob:
+                num_zombie = 0
+                entities = ob["entities"]
+                for e in entities:
+                    if e["name"] == "Zombie":
+                        num_zombie += 1
+            if num_zombie != 4:
+                self.total_reward += (4 - num_zombie) * 5
+        if world_state.number_of_rewards_since_last_state > 0:
+            # A reward signal has come in - see what it is:
+            self.total_reward += world_state.rewards[-1].getValue()
+
 
         return obs, allow_break_action
 
     def log_returns(self, episode_num, total_reward):
         """
         Log the current returns as a graph and text file
-
         Args:
             steps (list): list of global steps after each episode
             returns (list): list of total return of each episode
