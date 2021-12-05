@@ -1,10 +1,6 @@
 # Rllib docs: https://docs.ray.io/en/latest/rllib.html
 # Malmo XML docs: https://docs.ray.io/en/latest/rllib.html
 
-########### TO DO ###########
-# reward for agent health   #
-#############################
-
 try:
     from malmo import MalmoPython
 except:
@@ -23,8 +19,8 @@ import random
 import math
 import matplotlib.pyplot as plt
 # Task parameters:
-ARENA_WIDTH = 100
-ARENA_BREADTH = 100
+ARENA_WIDTH = 20
+ARENA_BREADTH = 20
 
 class MobDefense(gym.Env):
 
@@ -61,7 +57,6 @@ class MobDefense(gym.Env):
     def reset(self):
         """
         Resets the environment for the next episode.
-
         Returns
             observation: <np.array> flattened initial obseravtion
         """
@@ -99,39 +94,49 @@ class MobDefense(gym.Env):
         # Draw Arena
         arena_walls = ""
         for x in range(-10,11):
-            arena_walls += "<DrawBlock x='{}' y='2' z='{}' type='grass' />".format(x, 10)
-            arena_walls += "<DrawBlock x='{}' y='3' z='{}' type='grass' />".format(x, 10)
-            arena_walls += "<DrawBlock x='{}' y='4' z='{}' type='grass' />".format(x, 10)
-            arena_walls += "<DrawBlock x='{}' y='2' z='{}' type='grass' />".format(x, -10)
-            arena_walls += "<DrawBlock x='{}' y='3' z='{}' type='grass' />".format(x, -10)
-            arena_walls += "<DrawBlock x='{}' y='4' z='{}' type='grass' />".format(x, -10)
+            arena_walls += "<DrawBlock x='{}' y='2' z='{}' type='glowstone' />".format(x, 10)
+            arena_walls += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(x, 10)
+            arena_walls += "<DrawBlock x='{}' y='4' z='{}' type='glowstone' />".format(x, 10)
+            arena_walls += "<DrawBlock x='{}' y='2' z='{}' type='glowstone' />".format(x, -10)
+            arena_walls += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(x, -10)
+            arena_walls += "<DrawBlock x='{}' y='4' z='{}' type='glowstone' />".format(x, -10)
         
         glowstone_wall = ""
-        glowstone_wall += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(0, 10)
-        glowstone_wall += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(0, -10)
-        glowstone_wall += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(-10, 5)
-        glowstone_wall += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(10, 5)
+        glowstone_wall += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(11, 11)
+        glowstone_wall += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(-11, -11)
+        glowstone_wall += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(-11, 11)
+        glowstone_wall += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(11, -11)
             
         for z in range(-10,11):
-            arena_walls += "<DrawBlock x='{}' y='2' z='{}' type='grass' />".format(-10, z)
-            arena_walls += "<DrawBlock x='{}' y='3' z='{}' type='grass' />".format(-10, z)
-            arena_walls += "<DrawBlock x='{}' y='4' z='{}' type='grass' />".format(-10, z)   
-            arena_walls += "<DrawBlock x='{}' y='2' z='{}' type='grass' />".format(10, z) 
-            arena_walls += "<DrawBlock x='{}' y='3' z='{}' type='grass' />".format(10, z)
-            arena_walls += "<DrawBlock x='{}' y='4' z='{}' type='grass' />".format(10, z)
+            arena_walls += "<DrawBlock x='{}' y='2' z='{}' type='glowstone' />".format(-10, z)
+            arena_walls += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(-10, z)
+            arena_walls += "<DrawBlock x='{}' y='4' z='{}' type='glowstone' />".format(-10, z)   
+            arena_walls += "<DrawBlock x='{}' y='2' z='{}' type='glowstone' />".format(10, z) 
+            arena_walls += "<DrawBlock x='{}' y='3' z='{}' type='glowstone' />".format(10, z)
+            arena_walls += "<DrawBlock x='{}' y='4' z='{}' type='glowstone' />".format(10, z)
         
         # Draw Zombie
-        hostile_mob_xml = "<DrawEntity x='{}' y='2' z='{}' type='Zombie' />".format(0, 5) 
-        hostile_mob_xml += "<DrawEntity x='{}' y='2' z='{}' type='Zombie' />".format(-5, 2) 
-        hostile_mob_xml += "<DrawEntity x='{}' y='2' z='{}' type='Zombie' />".format(3, 8) 
+        hostile_mob_xml = ""
+        hostile_mob_xml += "<DrawEntity x='{}' y='2' z='{}' type='Zombie' />".format(random.randint(-9,9), random.randint(-9,9))
+        hostile_mob_xml += "<DrawEntity x='{}' y='2' z='{}' type='Zombie' />".format(random.randint(-9,9), random.randint(-9,9))
+        hostile_mob_xml += "<DrawEntity x='{}' y='2' z='{}' type='Zombie' />".format(random.randint(-9,9), random.randint(-9,9))
+        hostile_mob_xml += "<DrawEntity x='{}' y='2' z='{}' type='Zombie' />".format(random.randint(-9,9), random.randint(-9,9))
 
+        # hostile_mob_xml += "<DrawLine x1='-8' y1='2' z1='8' x2='-8' y2='2' z2='8' type='mob_spawner' variant='Zombie' />"
+        # hostile_mob_xml += "<DrawLine x1='-8' y1='2' z1='-8' x2='-8' y2='2' z2='-8' type='mob_spawner' variant='Zombie' />"
+        # hostile_mob_xml += "<DrawLine x1='8' y1='2' z1='-8' x2='8' y2='2' z2='-8' type='mob_spawner' variant='Zombie' />"
+        # hostile_mob_xml += "<DrawLine x1='8' y1='2' z1='8' x2='8' y2='2' z2='8' type='mob_spawner' variant='Zombie' />"
+
+        #Draw Sheep
+        friendly_mob_xml = ""
+        for sheep in range(0,50):
+            friendly_mob_xml += "<DrawEntity x='{}' y='2' z='{}' type='Sheep' />".format(random.randint(-8,8), random.randint(-8,8)) 
+       
         return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-
                     <About>
                         <Summary>Mob Defense</Summary>
                     </About>
-
                     <ServerSection>
                         <ServerInitialConditions>
                             <Time>
@@ -148,14 +153,14 @@ class MobDefense(gym.Env):
                                 arena_walls + \
                                 glowstone_wall + \
                                 hostile_mob_xml + \
+                                friendly_mob_xml + \
                                 '''<DrawBlock x='0'  y='2' z='0' type='air' />
                                 <DrawBlock x='0'  y='1' z='0' type='stone' />
                             </DrawingDecorator>
                             <ServerQuitWhenAnyAgentFinishes/>
-                            <ServerQuitFromTimeUp timeLimitMs="120000"/>
+                            <ServerQuitFromTimeUp timeLimitMs="60000"/>
                         </ServerHandlers>
                     </ServerSection>
-
                     <AgentSection mode="Survival">
                         <Name>CS175MobDefense</Name>
                         <AgentStart>
@@ -170,7 +175,8 @@ class MobDefense(gym.Env):
                             <ObservationFromFullStats/>
                             <ObservationFromRay/>
                             <RewardForDamagingEntity>
-                                <Mob type="Zombie" reward="1"/>
+                                <Mob type="Zombie" reward="2"/>
+                                <Mob type="Sheep" reward="-1"/>
                             </RewardForDamagingEntity>
                             <ObservationFromNearbyEntities>
                                 <Range name="entities" xrange="'''+str(ARENA_WIDTH)+'''" yrange="2" zrange="'''+str(ARENA_BREADTH)+'''" />
@@ -222,12 +228,13 @@ class MobDefense(gym.Env):
 
         # main loop:
         total_reward = 0
-        Zombie_population = 0
+        zombie_population = 4
         self_x = 0
         self_z = 0
         current_yaw = 0
-
-        self.agent_host.sendCommand("chat /enchant CS175MobDefense minecraft:sharpness 5")
+        curr_health = 0
+        self.agent_host.sendCommand("chat /enchant CS175MobDefense minecraft:sharpness 2")
+        self.agent_host.sendCommand("chat /effect CS175MobDefense minecraft:night_vision 100000 2")
         
         while world_state.is_mission_running:
             world_state = self.agent_host.getWorldState()
@@ -253,18 +260,21 @@ class MobDefense(gym.Env):
                 # of population sizes - allows us some measure of "progress".
                 if u'entities' in ob:
                     entities = ob["entities"]
-                    num_Zombie = 0
+                    num_zombie = 0
+                    num_sheep = 0
                     x_pull = 0
                     z_pull = 0
                     for e in entities:
                         if e["name"] == "Zombie":
-                            num_Zombie += 1
+                            num_zombie += 1
                             # Each Zombie contributes to the direction we should head in...
                             dist = max(0.0001, (e["x"] - self_x) * (e["x"] - self_x) + (e["z"] - self_z) * (e["z"] - self_z))
                             # Prioritise going after wounded Zombie. Max Zombie health is 20, according to Minecraft wiki...
                             weight = 21.0 - e["life"]
                             x_pull += weight * (e["x"] - self_x) / dist
                             z_pull += weight * (e["z"] - self_z) / dist
+                        if e["name"] == "Sheep":
+                            num_sheep += 1
                     # Determine the direction we need to turn in order to head towards the "Zombieiest" point:
                     yaw = -180 * math.atan2(x_pull, z_pull) / math.pi
                     difference = yaw - current_yaw
@@ -273,22 +283,29 @@ class MobDefense(gym.Env):
                     while difference > 180:
                         difference -= 360
                     difference /= 180.0
-                    self.agent_host.sendCommand("turn " + str(difference))
+                    self.agent_host.sendCommand("turn " + str(difference*10))
                     move_speed = 1.0 if abs(difference) < 0.5 else 0  # move slower when turning faster - helps with "orbiting" problem
                     self.agent_host.sendCommand("move " + str(move_speed))
-                    if num_Zombie != Zombie_population:
+                    if num_zombie != zombie_population:
                         # Print an update of our "progress":
-                        Zombie_population = num_Zombie
-                        tot = Zombie_population
+                        tot = zombie_population
                         if tot:
-                            print("Zombie", end=' ')
-                            r = old_div(40.0, tot)
-                            print("Z:", num_Zombie)
+                            print("Zombie:Sheep", end=' ')
+                            print("Z:", num_zombie)
+                            print("S:", num_sheep)
                             
+
+                if u'Life' in ob:
+                    if curr_health > ob["Life"]:
+                        total_reward -= 1
+                    curr_health = ob["Life"]
             if world_state.number_of_rewards_since_last_state > 0:
                 # Keep track of our total reward:
                 total_reward += world_state.rewards[-1].getValue()
 
+        # Reward if agent has killed zombies
+        if num_zombie != zombie_population:
+            total_reward += (zombie_population - num_zombie) * 5
         # mission has ended.
         for error in world_state.errors:
             print("Error:",error.text)
@@ -314,10 +331,8 @@ class MobDefense(gym.Env):
         """
         Use the agent observation API to get a flattened 2 x 5 x 5 grid around the agent. 
         The agent is in the center square facing up.
-
         Args
             world_state: <object> current agent world state
-
         Returns
             observation: <np.array> the state observation
             allow_break_action: <bool> whether the agent is facing a diamond
@@ -362,7 +377,6 @@ class MobDefense(gym.Env):
     def log_returns(self, episode_num, total_reward):
         """
         Log the current returns as a graph and text file
-
         Args:
             steps (list): list of global steps after each episode
             returns (list): list of total return of each episode
