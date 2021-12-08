@@ -335,7 +335,7 @@ class MobDefense(gym.Env):
             steps (list): list of global steps after each episode
             returns (list): list of total return of each episode
         """
-        self.total_reward += (4 - self.num_zombie) * 10
+        self.total_reward += (4 - self.num_zombie) * 40
         self.total_reward -= (50 - self.num_sheep) * 2
         plt.clf()
         plt.plot(range(1,episode_num + 1), self.total_reward_arr)
