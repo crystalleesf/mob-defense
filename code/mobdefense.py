@@ -34,7 +34,9 @@ class MobDefense(gym.Env):
         self.episode_num = 0
         self.total_reward = 0
         self.total_reward_arr = []
-
+        self.sheep_reward = 0
+        self.curr_health = 0
+        self.num_zombie = 0
         # Rllib Parameters
         self.action_space = Box(low= np.array([-1.0,-1.0,-1.0]), high=np.array([1.0,1.0,1.0]), dtype=np.float32)
         self.observation_space = Box(0, 1, shape=(2 * self.obs_size * self.obs_size, ), dtype=np.float32)
@@ -68,6 +70,7 @@ class MobDefense(gym.Env):
         print("Episode number: ", self.episode_num)
         print("Total score this round:", self.total_reward)
         print("=" * 41)
+        self.log_returns(self.episode_num, self.total_reward)
 
         # Reset Malmo
         world_state = self.init_malmo()
@@ -79,6 +82,7 @@ class MobDefense(gym.Env):
         self.episode_return = 0
         self.episode_step = 0
         self.total_reward = 0
+        self.num_zombie = 4
 
         # Get Observation
         self.obs, self.allow_break_action = self.get_observation(world_state)
@@ -86,28 +90,49 @@ class MobDefense(gym.Env):
         return self.obs
 
     def step(self, action):
+        # Get Action
+        attack_command = 'attack 1' if action[2] >= 0 else 'attack 0'
+        if attack_command != 'attack 1' or self.allow_break_action:
+            move_command = 'move {}'.format(str(action[0]))
+            self.agent_host.sendCommand(move_command)        
+            turn_command = 'turn {}'.format(str(action[1] * 10 ))
+            self.agent_host.sendCommand(turn_command)
+            if attack_command == 'attack 1' and self.allow_break_action:
+                self.agent_host.sendCommand('move 0')
+                self.agent_host.sendCommand('turn 0')
+                self.agent_host.sendCommand(attack_command)
+                time.sleep(1.2)
+                self.agent_host.sendCommand('attack 0')
+       
+
         # Get Observation
         world_state = self.agent_host.getWorldState()
-        for error in world_state.errors:
-            print("Error:", error.text)
-        self.obs, self.allow_break_action = self.get_observation(world_state) 
-
         if world_state.number_of_observations_since_last_state > 0:
             msg = world_state.observations[-1].text
             ob = json.loads(msg)
-            # Use the line-of-sight observation to determine when to hit and when not to hit:
-            if u'LineOfSight' in ob:
-                los = ob[u'LineOfSight']
-                type=los["type"]
-                if type == "Zombie":
-                    self.agent_host.sendCommand('move 0')
-                    self.agent_host.sendCommand('turn 0')
-                    self.agent_host.sendCommand("attack 1")
-                    time.sleep(.5)
-                    self.agent_host.sendCommand("attack 0")
-            self.agent_host.sendCommand("turn " + str(action[1]*10))
-            self.agent_host.sendCommand("move " + str(action[0]))
+            # Use the line-of-sight
+            if u'Life' in ob:
+                if self.curr_health > ob["Life"]:
+                    self.total_reward -= 1
+                self.curr_health = ob["Life"]
+            # Check number of remaining zombies
+            if u'entities' in ob:
+                self.num_zombie = 0
+                entities = ob["entities"]
+                for e in entities:
+                    if e["name"] == "Zombie":
+                        self.num_zombie += 1
+            print(self.num_zombie)
 
+        # A reward signal has come in - see what it is:
+        # if world_state.rewards:
+        # print("world_state.rewards[-1]: ", world_state.rewards[-1].getValue())
+        # self.total_reward += world_state.rewards[-1].getValue()
+
+        for error in world_state.errors:
+            print("Error:", error.text)
+        self.obs, self.allow_break_action = self.get_observation(world_state) 
+        
         # Get Done
         done = not world_state.is_mission_running 
 
@@ -115,7 +140,10 @@ class MobDefense(gym.Env):
         reward = 0
         for r in world_state.rewards:
             reward += r.getValue()
-        self.episode_return += reward
+        print("r: ", reward)
+        # self.episode_return += reward
+        self.total_reward += reward
+        print("self.total_reward: ", self.total_reward)
 
         return self.obs, reward, done, dict()
 
@@ -199,7 +227,7 @@ class MobDefense(gym.Env):
                             <ObservationFromFullStats/>
                             <ObservationFromRay/>
                             <RewardForDamagingEntity>
-                                <Mob type="Zombie" reward="1"/>
+                                <Mob type="Zombie" reward="3"/>
                                 <Mob type="Sheep" reward= "-1"/>
                             </RewardForDamagingEntity>
                             <ObservationFromNearbyEntities>
@@ -246,11 +274,14 @@ class MobDefense(gym.Env):
 
         world_state = self.agent_host.getWorldState()
         while not world_state.has_mission_begun:
-            time.sleep(0.1)
+            time.sleep(0.15)
             world_state = self.agent_host.getWorldState()
             for error in world_state.errors:
                 print("\nError:", error.text)
 
+        self.agent_host.sendCommand("pitch -1")
+        time.sleep(0.2)
+        self.agent_host.sendCommand("pitch 0")
         self.agent_host.sendCommand("chat /enchant CS175MobDefense minecraft:sharpness 2")
         self.agent_host.sendCommand("chat /effect CS175MobDefense minecraft:night_vision 100000 2")
         return world_state
@@ -296,26 +327,11 @@ class MobDefense(gym.Env):
                     obs = np.rot90(obs, k=3, axes=(1, 2))
                 obs = obs.flatten()
 
-                allow_break_action = observations['LineOfSight']['type'] == 'Zombie'
-                # print(allow_break_action)
+                if 'LineOfSight' in observations:
+                    allow_break_action = observations['LineOfSight']['type'] == 'Zombie'
                 break
         
-        ##### End of episode #####
-        # Check number of zombies remaining and reward if the agent has killed a zombie
-        if world_state.number_of_observations_since_last_state > 0:
-            msg = world_state.observations[-1].text
-            ob = json.loads(msg)
-            if u'entities' in ob:
-                num_zombie = 0
-                entities = ob["entities"]
-                for e in entities:
-                    if e["name"] == "Zombie":
-                        num_zombie += 1
-            if num_zombie != 4:
-                self.total_reward += (4 - num_zombie) * 5
-        if world_state.number_of_rewards_since_last_state > 0:
-            # A reward signal has come in - see what it is:
-            self.total_reward += world_state.rewards[-1].getValue()
+        
 
 
         return obs, allow_break_action
@@ -327,6 +343,7 @@ class MobDefense(gym.Env):
             steps (list): list of global steps after each episode
             returns (list): list of total return of each episode
         """
+        self.total_reward += (4 - self.num_zombie) * 5
         plt.clf()
         plt.plot(range(1,episode_num + 1), self.total_reward_arr)
         plt.title('Mob Defense')
