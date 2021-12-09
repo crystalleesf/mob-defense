@@ -40,6 +40,7 @@ Our number one goal for the agent was for it to damage and kill Zombies, so we p
 
 ## Evaluation
 ### Quantitative
+We evaluated our agent quantitively by plotting the total reward after each episode. Each episode is 120,000 ms long or concludes when the agent is killed. Looking at our graph, after about 100 episodes we can start to see some sustained improvement. Compared to our previous graph, this one shows a trend upwards signaling that more learning is going on. We believe that this uptrend is due to changing the reward structure as well as making more of the movements learned (moving and turning). Once the agent kills a zombie, there is a substantial reward so it begins prioritizing killing the zombies instead of running away.
 
 ### Qualitative
 During the first few hundred of episodes, the Zombies were easily attacking the agent. The agent was moving and turning fairly randomly and was consistently getting hit and losing health. The agent also kept dying before the 60 second episode time limit was up. We noticed that the agent tended to gravitate towards the walls after it was hit by a Zombie. Unlike the agent that was learning based on the "Zombiest" point, this agent was prioritizing running away from the Zombies rather than facing the Zombies head on.  After running the program for 5 hours, we saw an improvement in the agent's behavior, such that the agent was able to move away from Zombies and attack the Zombies if it was close enough.
