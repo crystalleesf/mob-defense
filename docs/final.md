@@ -5,7 +5,7 @@ title: Final Report
 
 ## Video Summary
 
-https://www.youtube.com/watch?v=Ex2QWVCziHU
+[https://www.youtube.com/watch?v=Ex2QWVCziHU](https://www.youtube.com/watch?v=Ex2QWVCziHU)
 
 ## Project Summary
 <img src="./images/mob-defense-screenshot-2.png" alt="Mob Defense Screenshot" width="500"/>
